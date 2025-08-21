@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣觀光工廠清單</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.7/css/bootstrap.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #FFF8F9;
+            font-family: 'ZCOOL KuaiLe', cursive, 'Noto Sans TC', sans-serif;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ff91a4;
+            font-weight: bold;
+            font-size: 2.2rem;
+            text-shadow: 1px 1px 2px #ffd6e0;
+        }
+
+        .filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+            background-color: #FFE4E1;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(255, 182, 193, 0.3);
+        }
+
+        .filter-container label {
+            margin-right: 5px;
+            font-weight: bold;
+            color: #ff7b9c;
+        }
+
+        select.form-select {
+            border: 2px solid #ffb6c1;
+            border-radius: 12px;
+            background-color: #fff0f5;
+            color: #ff6b81;
+            font-size: 16px;
+            padding: 5px 10px;
+            transition: 0.3s;
+        }
+
+        select.form-select:focus {
+            border-color: #ff91a4;
+            box-shadow: 0 0 10px #ffccd5;
+        }
+
+        /* 表格樣式 */
+        .table {
+            background-color: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(255, 182, 193, 0.2);
+        }
+
+        .table th {
+            background-color: #FFD6E0;
+            color: #ff4d6d;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .table td {
+            vertical-align: middle;
+            font-size: 15px;
+            padding: 10px;
+        }
+
+        .table a {
+            color: #ff6f91;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .table a:hover {
+            color: #ff4d6d;
+            text-decoration: underline;
+        }
+
+        /* 手機卡片樣式 */
+        .card {
+            margin-bottom: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(255, 182, 193, 0.3);
+            background: #fff;
+            border: 2px solid #FFD6E0;
+        }
+
+        .card-body h5 {
+            color: #ff4d6d;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .card-body p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .btn-outline-primary {
+            border-color: #ff91a4;
+            color: #ff91a4;
+            border-radius: 20px;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #ff91a4;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-3 mb-5">
+        <h2>台灣觀光工廠清單</h2>
+
+        <!-- 篩選區 -->
+        <div class="filter-container">
+            <div>
+                <label for="regionSelect">選擇地區：</label>
+                <select id="regionSelect" class="form-select" style="width:150px;">
+                    <option value="">全部地區</option>
+                </select>
+            </div>
+            <div>
+                <label for="citySelect">選擇縣市：</label>
+                <select id="citySelect" class="form-select" style="width:150px;">
+                    <option value="">全部縣市</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 桌面表格 -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="table table-bordered shadow-sm">
+                <thead>
+                    <tr>
+                        <th>地區別</th>
+                        <th>縣市</th>
+                        <th>觀光工廠名稱</th>
+                        <th>地址</th>
+                        <th>預約電話</th>
+                        <th>網址</th>
+                    </tr>
+                </thead>
+                <tbody id="myTbody"></tbody>
+            </table>
+        </div>
+
+        <!-- 手機卡片容器 -->
+        <div id="cardContainer" class="d-md-none"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const url = './factory.json';
+            let allData = [];
+
+            $.ajax({
+                type: "get",
+                url: url,
+                dataType: "json",
+                success: function (res) {
+                    allData = res;
+                    initRegionFilter(allData);
+                    initCityFilter(allData);
+                    renderTable(allData);
+                    renderCards(allData);
+                },
+                error: function (err) {
+                    console.error(err);
+                    alert("讀取 JSON 檔案失敗");
+                }
+            });
+
+            function initRegionFilter(data) {
+                const regions = [...new Set(data.map(item => item.地區別))];
+                regions.forEach(region => {
+                    $('#regionSelect').append(`<option value="${region}">${region}</option>`);
+                });
+            }
+
+            function initCityFilter(data) {
+                const cities = [...new Set(data.map(item => item.縣市))];
+                $('#citySelect').empty().append(`<option value="">全部縣市</option>`);
+                cities.forEach(city => {
+                    $('#citySelect').append(`<option value="${city}">${city}</option>`);
+                });
+            }
+
+            $('#regionSelect').on('change', function () {
+                const selectedRegion = $(this).val();
+                const filteredCities = selectedRegion
+                    ? [...new Set(allData.filter(item => item.地區別 === selectedRegion).map(item => item.縣市))]
+                    : [...new Set(allData.map(item => item.縣市))];
+
+                $('#citySelect').empty().append(`<option value="">全部縣市</option>`);
+                filteredCities.forEach(city => {
+                    $('#citySelect').append(`<option value="${city}">${city}</option>`);
+                });
+
+                applyFilter();
+            });
+
+            $('#citySelect').on('change', applyFilter);
+
+            function applyFilter() {
+                const selectedRegion = $('#regionSelect').val();
+                const selectedCity = $('#citySelect').val();
+
+                const filteredData = allData.filter(item => {
+                    return (selectedRegion === '' || item.地區別 === selectedRegion) &&
+                        (selectedCity === '' || item.縣市 === selectedCity);
+                });
+
+                renderTable(filteredData);
+                renderCards(filteredData);
+            }
+
+            function renderTable(data) {
+                let html = '';
+                data.forEach(item => {
+                    html += `
+                        <tr>
+                            <td>${item.地區別}</td>
+                            <td>${item.縣市}</td>
+                            <td>${item.觀光工廠名稱}</td>
+                            <td>${item.地址}</td>
+                            <td>${item.觀光工廠預約電話}</td>
+                            <td><a href="${item.網址}" target="_blank">連結</a></td>
+                        </tr>
+                    `;
+                });
+                $('#myTbody').html(html);
+            }
+
+            function renderCards(data) {
+                let html = '';
+                data.forEach(item => {
+                    html += `
+                        <div class="card">
+                            <div class="card-body">
+                                <h5>${item.觀光工廠名稱}</h5>
+                                <p><strong>地區別：</strong>${item.地區別}</p>
+                                <p><strong>縣市：</strong>${item.縣市}</p>
+                                <p><strong>地址：</strong>${item.地址}</p>
+                                <p><strong>電話：</strong>${item.觀光工廠預約電話}</p>
+                                <p><a href="${item.網址}" target="_blank" class="btn btn-sm btn-outline-primary">查看官網</a></p>
+                            </div>
+                        </div>
+                    `;
+                });
+                $('#cardContainer').html(html);
+            }
+        });
+    </script>
+</body>
+
+</html>
